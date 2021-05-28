@@ -11,7 +11,10 @@ Programs consist of only three opcodes:
 
   * `PUSH_INPUT(index uint32)`: pushes input at `index` onto the stack; fail if no such input exists
   * `PUSH_BYTES(payload []byte)`: push a byte string literal onto the stack; fail if no byte string is provided in the program
-  * `POP_N_HASH_AND_PUSH`: pop `N` values from the stack (where `N` is the branching factor set in the program metadata), hashing each value in pop order, and pushing the hash result onto the stack; fail if the stack has insufficient values
+  * `POP_CHILDREN_HASH_AND_PUSH`: pop `metadata.branching_factor` values from the stack, hashing each value in pop order, and pushing the hash result onto the stack; fail if the stack has insufficient values
+    * This op code saves us from repetitively storing the branching factor for this common case
+  * `POP_N_HASH_AND_PUSH`: pop `N` values from the stack, hashing each value in pop order, and pushing the hash result onto the stack; fail if the stack has insufficient values
+    * This op code is useful for multi-valued top-level digests, like that of the MMR
 
 All operations are executed sequentially and exactly once. There is no flow control.
 

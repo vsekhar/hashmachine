@@ -31,9 +31,6 @@ func New(p *hashmachine.Program, inputs [][]byte) (*HashMachine, error) {
 	default:
 		return nil, fmt.Errorf("unknown hash function: %s", p.Metadata.Hash.String())
 	}
-	if p.Metadata.BranchingFactor < 1 {
-		return nil, fmt.Errorf("bad branching factor in metadata: %d", p.Metadata.BranchingFactor)
-	}
 	if int(p.Metadata.ExpectedInputCount) != len(inputs) {
 		return nil, fmt.Errorf("invalid input count: program expected %d, got %d", p.Metadata.ExpectedInputCount, len(inputs))
 	}
@@ -76,6 +73,9 @@ func (hm *HashMachine) Step() error {
 	case hashmachine.OpCode_OPCODE_PUSH_BYTES:
 		hm.push(op.Payload)
 	case hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH:
+		if hm.program.Metadata.BranchingFactor < 1 {
+			return fmt.Errorf("bad branching factor in metadata: %d", hm.program.Metadata.BranchingFactor)
+		}
 		if len(hm.stack) < int(hm.program.Metadata.BranchingFactor) {
 			return fmt.Errorf("invalid program: stack underflow, expected at least %d values, found %d", int(hm.program.Metadata.BranchingFactor), len(hm.stack))
 		}

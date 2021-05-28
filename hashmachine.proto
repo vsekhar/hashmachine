@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+option go_package = "github.com/vsekhar/hashmachine";
+
+enum Hash {
+    HASH_UNKNOWN = 0;
+    HASH_SHA256 = 1;
+}
+
+message ProgramMetadata {
+    Hash hash = 1;
+    uint32 expected_input_count = 2;
+    uint32 branching_factor = 3;
+    uint32 hash_output_length_bytes = 4;
+}
+
+enum OpCode {
+    OPCODE_UNKNOWN = 0;
+    OPCODE_PUSH_INPUT = 1;          // push input value at 'index' onto stack
+    OPCODE_PUSH_BYTES = 2;          // push 'payload' onto the stack
+    OPCODE_POP_N_HASH_AND_PUSH = 3; // pop metadata.branching_factor values from
+                                    // stack, hashing each in pop order, get
+                                    // hash sum and push onto stack
+    // TODO: OPCODE_POP_ALL_HASH_AND_PUSH to support MMR multi-peak digests?
+}
+
+message Op {
+    OpCode opcode = 1;
+    uint64 index = 2;
+    bytes payload = 3;
+}
+
+message Program {
+    ProgramMetadata metadata = 1;
+    repeated Op Ops = 2;
+}

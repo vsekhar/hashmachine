@@ -1,0 +1,22 @@
+{
+    "files.trimTrailingWhitespace": true,
+    "files.trimFinalNewlines": true,
+    "files.insertFinalNewline": true,
+
+    "[go]": {
+        "editor.rulers": [80],
+    },
+    "[proto3]": {
+        "editor.rulers": [80],
+    },
+
+    "protoc": {
+        "path": "protoc",
+        "compile_on_save": true,
+        "options": [
+            "--proto_path=${workspaceRoot}",
+            "--go_out=.",
+            "--go_opt=module=github.com/vsekhar/hashmachine",
+        ]
+    }
+}

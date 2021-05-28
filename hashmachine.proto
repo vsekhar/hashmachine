@@ -16,12 +16,15 @@ message ProgramMetadata {
 
 enum OpCode {
     OPCODE_UNKNOWN = 0;
-    OPCODE_PUSH_INPUT = 1;          // push input value at 'index' onto stack
-    OPCODE_PUSH_BYTES = 2;          // push 'payload' onto the stack
-    OPCODE_POP_N_HASH_AND_PUSH = 3; // pop metadata.branching_factor values from
-                                    // stack, hashing each in pop order, get
-                                    // hash sum and push onto stack
-    // TODO: OPCODE_POP_ALL_HASH_AND_PUSH to support MMR multi-peak digests?
+    OPCODE_PUSH_INPUT = 1;                 // push input value at 'index' onto stack
+    OPCODE_PUSH_BYTES = 2;                 // push 'payload' onto the stack
+    OPCODE_POP_CHILDREN_HASH_AND_PUSH = 3; // pop metadata.branching_factor values from
+                                           // stack, hashing each in pop order, get
+                                           // hash sum and push onto stack
+    OPCODE_POP_N_HASH_AND_PUSH = 4;        // pop 'index' values from stack, hashing
+                                           // each in pop order, get hash sum and push
+                                           // onto stack (ignores branching factor,
+                                           // useful for MMR multi-peak digests)
 }
 
 message Op {

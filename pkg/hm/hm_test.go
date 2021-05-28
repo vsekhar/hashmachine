@@ -29,7 +29,7 @@ var hashInput *hashmachine.Program = &hashmachine.Program{
 	},
 	Ops: []*hashmachine.Op{
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
 	},
 }
 
@@ -42,7 +42,7 @@ var hashInput2 *hashmachine.Program = &hashmachine.Program{
 	Ops: []*hashmachine.Op{
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 1},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
 	},
 }
 
@@ -83,6 +83,20 @@ var (
 	o = DecodeBase64OrDie("sMldWGNJuvhtsvs+SJ5bclJqVz1w8Ygv6aLLdZDEf/I")
 )
 
+var hashN *hashmachine.Program = &hashmachine.Program{
+	Metadata: &hashmachine.ProgramMetadata{
+		Hash:               hashmachine.Hash_HASH_SHA256,
+		ExpectedInputCount: 0,
+		BranchingFactor:    2,
+	},
+	Ops: []*hashmachine.Op{
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: b},
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: a},
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: c},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH, Index: 3},
+	},
+}
+
 var bInO *hashmachine.Program = &hashmachine.Program{
 	Metadata: &hashmachine.ProgramMetadata{
 		Hash:               hashmachine.Hash_HASH_SHA256,
@@ -94,9 +108,9 @@ var bInO *hashmachine.Program = &hashmachine.Program{
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: f},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0}, // b
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: a},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
 	},
 }
 
@@ -109,9 +123,9 @@ var jInO *hashmachine.Program = &hashmachine.Program{
 	Ops: []*hashmachine.Op{
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: m},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0}, // j
-		{Opcode: hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: g},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
 	},
 }
 
@@ -124,13 +138,13 @@ var bAndJInO *hashmachine.Program = &hashmachine.Program{
 	Ops: []*hashmachine.Op{
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: m},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 1}, // j
-		{Opcode: hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: f},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0}, // b
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: a},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
 	},
 }
 
@@ -143,6 +157,9 @@ type testCase struct {
 var testCases []testCase = []testCase{
 	// Passthrough
 	{hashInput, [][]byte{b}, DecodeBase64OrDie("PiPoFgA5WUoziU9lZOGxNIu9egCI1CxKy3PurtWcAJ0")},
+
+	// HashN
+	{hashN, [][]byte{}, DecodeBase64OrDie("N7OgVZ+dP0VRO9k8O/XxoBMIfbbz4tSxQs8ujGABv40")},
 
 	// Second level
 	{hashInput2, [][]byte{a, b}, c},

@@ -21,7 +21,6 @@ type HashMachine struct {
 	ip        int
 	hashMaker func() hash.Hash
 	stack     [][]byte
-	curHash   hash.Hash
 }
 
 func New(p *hashmachine.Program, inputs [][]byte) (*HashMachine, error) {
@@ -76,18 +75,24 @@ func (hm *HashMachine) Step() error {
 		hm.push(hm.inputs[op.Index])
 	case hashmachine.OpCode_OPCODE_PUSH_BYTES:
 		hm.push(op.Payload)
-	case hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH:
-		if hm.curHash == nil {
-			hm.curHash = hm.hashMaker()
-		}
+	case hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH:
 		if len(hm.stack) < int(hm.program.Metadata.BranchingFactor) {
-			return errors.New("invalid program: stack underflow")
+			return fmt.Errorf("invalid program: stack underflow, expected at least %d values, found %d", int(hm.program.Metadata.BranchingFactor), len(hm.stack))
 		}
+		h := hm.hashMaker()
 		for i := 0; i < int(hm.program.Metadata.BranchingFactor); i++ {
-			hm.curHash.Write(hm.pop())
+			h.Write(hm.pop())
 		}
-		hm.push(hm.curHash.Sum(nil))
-		hm.curHash = nil
+		hm.push(h.Sum(nil))
+	case hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH:
+		if len(hm.stack) == 0 {
+			return errors.New("invalid program: stack empty (OPCODE_POP_N_HASH_AND_PUSH)")
+		}
+		h := hm.hashMaker()
+		for i := 0; i < int(op.Index); i++ {
+			h.Write(hm.pop())
+		}
+		hm.push(h.Sum(nil))
 		/*
 			case hashmachine.OpCode_OPCODE_POP_AND_WRITE:
 				b := hm.pop()

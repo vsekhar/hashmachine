@@ -45,9 +45,9 @@ A more complex example might involve a client requesting a proof of inclusion fo
     g              n
    /  \           /  \
  /     \         /    \
- c      f       j     m
-/ \    / \     / \   / \
-a  b  d   e   h   i k   l
+ c      f       j     m      r
+/ \    / \     / \   / \    /  \
+a  b  d   e   h   i k   l   p  q   s
 ```
 
 To prove inclusion of `b` in `o`, the prover would provide values `a`, `f`, and `n` along with instructions on how to hash them together to produce `o`.

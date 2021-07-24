@@ -1,20 +1,24 @@
 # hashmachine
-Hashmachine is a simple and general protocol for hash proofs.
+Hashmachine is a simple and general protocol for hashing byte strings, useful when evaluating hash proofs from a number of sources (e.g. Merkle Trees).
 
 ## Running hashmachine programs
 
-Hashmachine encodes proofs as instructions to a stack machine, pushing binary literals, popping literals to write into a hasher, and pushing the result.
+Hashmachine encodes proofs as instructions to a stack machine
 
-All input and output to hashmachine programs are byte strings. A program is instantiated with a hash function and a set of input byte strings.
+A Hashmachine program can be thought of logically as a function with the following signature:
+```go
+func hashMachineProgram(inputs [][]byte, ops []opcodes) ([]byte, error)
+```
 
-Programs consist of only three opcodes:
+Programs consist of the following opcodes:
 
-  * `PUSH_INPUT(index uint32)`: pushes input at `index` onto the stack; fail if no such input exists
+  * `PUSH_INPUT(index uint32)`: pushes `input[index]` onto the stack; fail if no such input exists
   * `PUSH_BYTES(payload []byte)`: push a byte string literal onto the stack; fail if no byte string is provided in the program
-  * `POP_CHILDREN_HASH_AND_PUSH`: pop `metadata.branching_factor` values from the stack, hashing each value in pop order, and pushing the hash result onto the stack; fail if the stack has insufficient values
-    * This op code saves us from repetitively storing the branching factor for this common case
   * `POP_N_HASH_AND_PUSH`: pop `N` values from the stack, hashing each value in pop order, and pushing the hash result onto the stack; fail if the stack has insufficient values
     * This op code is useful for multi-valued top-level digests, like that of the MMR
+  * `POP_CHILDREN_HASH_AND_PUSH`: equivalent to `POP_N_HASH_AND_PUSH` where `N == metadata.branching_factor`.
+    * This op code is useful for hashing a set of interior nodes to produce their parent
+    * Having a separate op code saves us from repetitively storing the branching factor for this common case
 
 All operations are executed sequentially and exactly once. There is no flow control.
 
@@ -101,3 +105,11 @@ POP_N_HASH_AND_PUSH    // hashes g, then n, pushes o
 ```
 
 Proving multiple values reuses literals and intermediates, reducing the size of the proof. The proof for `b` alone had 3 literals and 7 operations, the proof for `j` alone had 2 literals and 5 operations, totalling 5 literals and 12 operations. The combined proof, however, only had 3 literals and 9 operations. Combined proof length grows approximately `O(logn)` in the number of values being proven (i.e. the number of inputs).
+
+## Caveats
+
+### Reusable sponges
+
+Modern hashes like Keccak/SHA-3 use a sponge construction whereby reading output from the hash modifies internal hash state, and where output can be read from the hash multiple times.
+
+While hashmachine can make use of hashes relying on sponge construction, hashmachine itself uses them as though they were legacy non-sponge hashes. That is, hashmachine opcodes can only be used to create programs that write to a hash function multiple times and perform a final read from them once before the internal state is discarded. This is in keeping with the use case of verifiable data structure proofs: hash state is not used by these data strucutures after a single parent node hash is read from them.

@@ -1,39 +1,113 @@
 syntax = "proto3";
 
+package hashmachine;
+
 option go_package = "github.com/vsekhar/hashmachine";
 
-enum Hash {
-    HASH_UNKNOWN = 0;
-    HASH_SHA256 = 1;
+import "google/protobuf/descriptor.proto";
+
+enum HashFunctionOutputLength {
+    HASHFUNCTIONOUTPUTLENGTH_UNKNOWN = 0;
+    HASHFUNCTIONOUTPUTLENGTH_FIXED = 1;
+    HASHFUNCTIONOUTPUTLENGTH_VARIABLE = 2;
+}
+
+extend google.protobuf.EnumValueOptions {
+    HashFunctionOutputLength output_length = 54435;
+}
+
+enum HashFunction {
+    HASHFUNCTION_UNKNOWN = 0;
+    HASHFUNCTION_SHA_256 = 1 [(output_length)=HASHFUNCTIONOUTPUTLENGTH_FIXED];
+    HASHFUNCTION_SHA3_512 = 2 [(output_length)=HASHFUNCTIONOUTPUTLENGTH_VARIABLE];
+}
+
+message HashConfig {
+    HashFunction hash_function = 1;
+
+    // hash_output_length_bytes is the number of bytes to read from a variable
+    // length hash function.
+    //
+    // For hash functions with variable length outputs, this field must be set
+    // otherwise the program is invalid.
+    //
+    // For hashes with fixed length outputs, this must not be set or set to zero
+    // otherwise the program is invalid.
+    uint32 hash_output_length_bytes = 2;
 }
 
 message ProgramMetadata {
-    Hash hash = 1;
-    uint32 expected_input_count = 2;
-    uint32 branching_factor = 3;
-    uint32 hash_output_length_bytes = 4;
+    HashConfig hash_config = 1;
+
+    // expected_input_count is the number of byte strings the program expects
+    // to be provided when the program is executed. Executions with a different
+    // number of byte strings as inputs (regardless of whether they are used)
+    // must fail.
+    uint32 expected_input_count = 3;
+
+    // branching_factor is the branching factor of the tree of hashes used to
+    // create the program. If the program uses OPCODE_POP_CHILDREN_HASH_AND_PUSH
+    // then branching_factor must be set and non-zero, otherwise the program is
+    // invalid. If the program does not use OPCODE_POP_CHILDREN_HASH_AND_PUSH,
+    // then branching_factor is ignored.
+    uint32 branching_factor = 4;
+
 }
 
 enum OpCode {
     OPCODE_UNKNOWN = 0;
-    OPCODE_PUSH_INPUT = 1;                 // push input value at 'index' onto stack
-    OPCODE_PUSH_BYTES = 2;                 // push 'payload' onto the stack
-    OPCODE_POP_CHILDREN_HASH_AND_PUSH = 3; // pop metadata.branching_factor values from
-                                           // stack, hashing each in pop order, get
-                                           // hash sum and push onto stack
-    OPCODE_POP_N_HASH_AND_PUSH = 4;        // pop 'index' values from stack, hashing
-                                           // each in pop order, get hash sum and push
-                                           // onto stack (ignores branching factor,
-                                           // useful for MMR multi-peak digests)
+
+    // OPCODE_INVALID invalidates a program if it appears anywhere in the list
+    // of opcodes.
+    //
+    // Implementations should not check for this opcode and should instead use
+    // the opcode for testing handling of unknown opcodes.
+    //
+    // OPCODE_INVALID is distinct from OPCODE_UNKNOWN. OPCODE_UNKNOWN is the
+    // default value and represents an opcode that has not been set, rather than
+    // an opcode that is set but to an invalid or unrecognized value.
+    OPCODE_INVALID = 1;
+
+    // OPCODE_PUSH_INPUT pushes the input value at 'index' onto the stack.
+    //
+    // The program is invalid if there is no input at 'index'.
+    OPCODE_PUSH_INPUT = 2;
+
+    // OPCODE_PUSH_BYTES pushes 'payload' onto the stack.
+    //
+    // The program is invalid if there is no 'payload'.
+    OPCODE_PUSH_BYTES = 3;
+
+    // OPCODE_POP_CHILDREN_HASH_AND_PUSH pops metadata.branchingfactor values
+    // from the stack, hashing each in pop order, gets the hash sum and pushes
+    // it onto the stack. This is equivalent to OPCODE_POP_N_HASH_AND_PUSH where
+    // N == medatadata.branchingfactor.
+    //
+    // OPCODE_POP_CHILDREN_HASH_AND_PUSH saves from repeatedly encoding a count
+    // of values to pop for the common case where we are popping a fixed number
+    // of children to produce a parent in a tree of hashes.
+    //
+    // The program is invalid if the stack underflows.
+    OPCODE_POP_CHILDREN_HASH_AND_PUSH = 4;
+
+    // OPCODE_POP_N_HASH_AND_PUSH pops 'index' values from the stack, hashing
+    // each in pop order, gets the hash sum and pushes it onto the stack.
+    //
+    // OPCODE_POP_N_HASH_AND_PUSH ignores metadata.branchingfactor. This opcode
+    // is useful when hashing variable numbers of inputs such as when creating
+    // a digest of peaks of a growing Merkle Mountain Range.
+    OPCODE_POP_N_HASH_AND_PUSH = 5;
 }
 
 message Op {
     OpCode opcode = 1;
+
+    // Parameters used by some opcodes
     uint64 index = 2;
     bytes payload = 3;
 }
 
 message Program {
     ProgramMetadata metadata = 1;
-    repeated Op Ops = 2;
+    repeated Op ops = 2;
 }

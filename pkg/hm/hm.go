@@ -2,44 +2,60 @@
 package hm
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"hash"
 
 	"github.com/vsekhar/hashmachine"
+	"github.com/vsekhar/hashmachine/pkg/oncehash"
+	"golang.org/x/crypto/sha3"
+	"google.golang.org/protobuf/proto"
 )
-
-type HashMaker interface {
-	Make() hash.Hash
-}
 
 type HashMachine struct {
 	program *hashmachine.Program
 	inputs  [][]byte
 
-	ip        int
-	hashMaker func() hash.Hash
-	stack     [][]byte
+	ip    int
+	h     oncehash.Hash
+	stack [][]byte
 }
 
 func New(p *hashmachine.Program, inputs [][]byte) (*HashMachine, error) {
-	var hm func() hash.Hash
-	switch p.Metadata.Hash {
-	case hashmachine.Hash_HASH_SHA256:
-		hm = sha256.New
-	default:
-		return nil, fmt.Errorf("unknown hash function: %s", p.Metadata.Hash.String())
-	}
 	if int(p.Metadata.ExpectedInputCount) != len(inputs) {
 		return nil, fmt.Errorf("invalid input count: program expected %d, got %d", p.Metadata.ExpectedInputCount, len(inputs))
 	}
 
-	return &HashMachine{
-		program:   p,
-		inputs:    inputs,
-		hashMaker: hm,
-	}, nil
+	ext := proto.GetExtension(p.Metadata.HashConfig.HashFunction.Descriptor().Values().ByNumber(p.Metadata.HashConfig.GetHashFunction().Number()).Options(), hashmachine.E_OutputLength)
+	v, ok := ext.(hashmachine.HashFunctionOutputLength)
+	if !ok {
+		panic(fmt.Sprintf("bad option value: %#v", v))
+	}
+	switch v {
+	case hashmachine.HashFunctionOutputLength_HASHFUNCTIONOUTPUTLENGTH_UNKNOWN:
+		return nil, fmt.Errorf("no hash function length option specified: %s", v)
+	case hashmachine.HashFunctionOutputLength_HASHFUNCTIONOUTPUTLENGTH_FIXED:
+		if p.Metadata.HashConfig.HashOutputLengthBytes != 0 {
+			return nil, fmt.Errorf("fixed-length hash function '%s' has non-zero HashOutputLengthBytes %d", p.Metadata.HashConfig.HashFunction.String(), p.Metadata.HashConfig.HashOutputLengthBytes)
+		}
+	case hashmachine.HashFunctionOutputLength_HASHFUNCTIONOUTPUTLENGTH_VARIABLE:
+		if p.Metadata.HashConfig.HashOutputLengthBytes == 0 {
+			return nil, fmt.Errorf("variable-length hash function '%s' has zero HashOutputLengthBytes %d", p.Metadata.HashConfig.HashFunction.String(), p.Metadata.HashConfig.HashOutputLengthBytes)
+		}
+	}
+
+	ret := &HashMachine{program: p, inputs: inputs}
+	switch p.Metadata.HashConfig.HashFunction {
+	case hashmachine.HashFunction_HASHFUNCTION_SHA_256:
+		ret.h = oncehash.WrapHash(sha256.New())
+	case hashmachine.HashFunction_HASHFUNCTION_SHA3_512:
+		ret.h = oncehash.WrapShake(sha3.NewShake256(), int(p.Metadata.HashConfig.HashOutputLengthBytes))
+	default:
+		return nil, fmt.Errorf("unknown hash function: %s", p.Metadata.HashConfig.HashFunction.String())
+	}
+
+	return ret, nil
 }
 
 func (hm *HashMachine) push(b []byte) {
@@ -60,14 +76,21 @@ func (hm *HashMachine) Output() ([]byte, error) {
 }
 
 func (hm *HashMachine) Step() error {
+	if hm.ip >= len(hm.program.Ops) {
+		return fmt.Errorf("ip advanced past end of program")
+	}
 	op := hm.program.Ops[hm.ip]
 	hm.ip++
 	switch op.Opcode {
 	case hashmachine.OpCode_OPCODE_UNKNOWN:
 		return errors.New("invalid program: opcode is UNKNOWN")
 	case hashmachine.OpCode_OPCODE_PUSH_INPUT:
+		if op.Index >= uint64(hm.program.Metadata.ExpectedInputCount) {
+			return fmt.Errorf("invalid program: input index out of bounds %d, program's expected input count %d", op.Index, hm.program.Metadata.ExpectedInputCount)
+		}
 		if int(op.Index) >= len(hm.inputs) {
-			return fmt.Errorf("invalid program: input index out of bounds %d, %d inputs", op.Index, len(hm.inputs))
+			// Shouldn't happen, we check inputs in New.
+			return fmt.Errorf("invalid invocation: program expected input at index %d, invoked with %d total inputs", op.Index, len(hm.inputs))
 		}
 		hm.push(hm.inputs[op.Index])
 	case hashmachine.OpCode_OPCODE_PUSH_BYTES:
@@ -79,20 +102,20 @@ func (hm *HashMachine) Step() error {
 		if len(hm.stack) < int(hm.program.Metadata.BranchingFactor) {
 			return fmt.Errorf("invalid program: stack underflow, expected at least %d values, found %d", int(hm.program.Metadata.BranchingFactor), len(hm.stack))
 		}
-		h := hm.hashMaker()
+		hm.h.Reset()
 		for i := 0; i < int(hm.program.Metadata.BranchingFactor); i++ {
-			h.Write(hm.pop())
+			hm.h.Write(hm.pop())
 		}
-		hm.push(h.Sum(nil))
+		hm.push(hm.h.Sum(nil))
 	case hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH:
 		if len(hm.stack) == 0 {
 			return errors.New("invalid program: stack empty (OPCODE_POP_N_HASH_AND_PUSH)")
 		}
-		h := hm.hashMaker()
+		hm.h.Reset()
 		for i := 0; i < int(op.Index); i++ {
-			h.Write(hm.pop())
+			hm.h.Write(hm.pop())
 		}
-		hm.push(h.Sum(nil))
+		hm.push(hm.h.Sum(nil))
 		/*
 			case hashmachine.OpCode_OPCODE_POP_AND_WRITE:
 				b := hm.pop()
@@ -115,5 +138,27 @@ func (hm *HashMachine) Step() error {
 }
 
 func (hm *HashMachine) Done() bool {
-	return hm.ip == len(hm.program.Ops)
+	return hm.ip >= len(hm.program.Ops)
+}
+
+func VerifyWithOutput(prog *hashmachine.Program, inputs [][]byte, expected []byte) (ok bool, output []byte, err error) {
+	hm, err := New(prog, inputs)
+	if err != nil {
+		return false, nil, err
+	}
+	for !hm.Done() {
+		if err := hm.Step(); err != nil {
+			return false, nil, err
+		}
+	}
+	out, err := hm.Output()
+	if err != nil {
+		return false, out, err
+	}
+	return bytes.Equal(out, expected), out, nil
+}
+
+func Verify(prog *hashmachine.Program, inputs [][]byte, expected []byte) (ok bool, err error) {
+	ok, _, err = VerifyWithOutput(prog, inputs, expected)
+	return ok, err
 }

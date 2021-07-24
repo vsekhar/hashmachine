@@ -1,7 +1,6 @@
 package hm_test
 
 import (
-	"bytes"
 	"encoding/base64"
 	"testing"
 
@@ -23,7 +22,9 @@ func Encode(b []byte) string {
 
 var hashInput *hashmachine.Program = &hashmachine.Program{
 	Metadata: &hashmachine.ProgramMetadata{
-		Hash:               hashmachine.Hash_HASH_SHA256,
+		HashConfig: &hashmachine.HashConfig{
+			HashFunction: hashmachine.HashFunction_HASHFUNCTION_SHA_256,
+		},
 		ExpectedInputCount: 1,
 		BranchingFactor:    0,
 	},
@@ -35,7 +36,9 @@ var hashInput *hashmachine.Program = &hashmachine.Program{
 
 var hashInput2 *hashmachine.Program = &hashmachine.Program{
 	Metadata: &hashmachine.ProgramMetadata{
-		Hash:               hashmachine.Hash_HASH_SHA256,
+		HashConfig: &hashmachine.HashConfig{
+			HashFunction: hashmachine.HashFunction_HASHFUNCTION_SHA_256,
+		},
 		ExpectedInputCount: 2,
 		BranchingFactor:    0,
 	},
@@ -48,7 +51,9 @@ var hashInput2 *hashmachine.Program = &hashmachine.Program{
 
 var hashInput3 *hashmachine.Program = &hashmachine.Program{
 	Metadata: &hashmachine.ProgramMetadata{
-		Hash:               hashmachine.Hash_HASH_SHA256,
+		HashConfig: &hashmachine.HashConfig{
+			HashFunction: hashmachine.HashFunction_HASHFUNCTION_SHA_256,
+		},
 		ExpectedInputCount: 3,
 		BranchingFactor:    0,
 	},
@@ -106,7 +111,9 @@ var (
 
 var hashN *hashmachine.Program = &hashmachine.Program{
 	Metadata: &hashmachine.ProgramMetadata{
-		Hash:               hashmachine.Hash_HASH_SHA256,
+		HashConfig: &hashmachine.HashConfig{
+			HashFunction: hashmachine.HashFunction_HASHFUNCTION_SHA_256,
+		},
 		ExpectedInputCount: 0,
 		BranchingFactor:    2,
 	},
@@ -120,7 +127,9 @@ var hashN *hashmachine.Program = &hashmachine.Program{
 
 var bInO *hashmachine.Program = &hashmachine.Program{
 	Metadata: &hashmachine.ProgramMetadata{
-		Hash:               hashmachine.Hash_HASH_SHA256,
+		HashConfig: &hashmachine.HashConfig{
+			HashFunction: hashmachine.HashFunction_HASHFUNCTION_SHA_256,
+		},
 		ExpectedInputCount: 1,
 		BranchingFactor:    2,
 	},
@@ -137,7 +146,9 @@ var bInO *hashmachine.Program = &hashmachine.Program{
 
 var jInO *hashmachine.Program = &hashmachine.Program{
 	Metadata: &hashmachine.ProgramMetadata{
-		Hash:               hashmachine.Hash_HASH_SHA256,
+		HashConfig: &hashmachine.HashConfig{
+			HashFunction: hashmachine.HashFunction_HASHFUNCTION_SHA_256,
+		},
 		ExpectedInputCount: 1,
 		BranchingFactor:    2,
 	},
@@ -152,7 +163,9 @@ var jInO *hashmachine.Program = &hashmachine.Program{
 
 var bAndJInO *hashmachine.Program = &hashmachine.Program{
 	Metadata: &hashmachine.ProgramMetadata{
-		Hash:               hashmachine.Hash_HASH_SHA256,
+		HashConfig: &hashmachine.HashConfig{
+			HashFunction: hashmachine.HashFunction_HASHFUNCTION_SHA_256,
+		},
 		ExpectedInputCount: 2,
 		BranchingFactor:    2,
 	},
@@ -171,7 +184,9 @@ var bAndJInO *hashmachine.Program = &hashmachine.Program{
 
 var MMRDigest *hashmachine.Program = &hashmachine.Program{
 	Metadata: &hashmachine.ProgramMetadata{
-		Hash:               hashmachine.Hash_HASH_SHA256,
+		HashConfig: &hashmachine.HashConfig{
+			HashFunction: hashmachine.HashFunction_HASHFUNCTION_SHA_256,
+		},
 		ExpectedInputCount: 0,
 		BranchingFactor:    2,
 	},
@@ -219,21 +234,10 @@ var testCases []testCase = []testCase{
 
 func TestProofs(t *testing.T) {
 	for i, tc := range testCases {
-		hm, err := hm.New(tc.p, tc.inputs)
+		ok, out, err := hm.VerifyWithOutput(tc.p, tc.inputs, tc.output)
 		if err != nil {
-			t.Fatalf("test case %d: %v", i, err)
-		}
-		for !hm.Done() {
-			if err := hm.Step(); err != nil {
-				t.Errorf("test case %d: %v", i, err)
-			}
-		}
-		out, err := hm.Output()
-		if err != nil {
-			t.Fatalf("test case %d: %v", i, err)
-		}
-
-		if !bytes.Equal(out, tc.output) {
+			t.Errorf("test case %d: %v", i, err)
+		} else if !ok {
 			t.Errorf("test case %d unequal output: expected %s, got %s", i, Encode(tc.output), Encode(out))
 		}
 	}

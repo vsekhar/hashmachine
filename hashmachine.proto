@@ -6,6 +6,11 @@ option go_package = "github.com/vsekhar/hashmachine";
 
 import "google/protobuf/descriptor.proto";
 
+// HashFunctionOutputLength describes whether a HashFunction has fixed or
+// variable length output.
+//
+// Programs using a HashFunction with variable length output must also set
+// hash_output_length_bytes in their HashConfig.
 enum HashFunctionOutputLength {
     HASHFUNCTIONOUTPUTLENGTH_UNKNOWN = 0;
     HASHFUNCTIONOUTPUTLENGTH_FIXED = 1;
@@ -16,12 +21,16 @@ extend google.protobuf.EnumValueOptions {
     HashFunctionOutputLength output_length = 54435;
 }
 
+// HashFunction specifies the hash function to use when evaluating the
+// hashmachine program.
 enum HashFunction {
     HASHFUNCTION_UNKNOWN = 0;
     HASHFUNCTION_SHA_256 = 1 [(output_length)=HASHFUNCTIONOUTPUTLENGTH_FIXED];
     HASHFUNCTION_SHA3_512 = 2 [(output_length)=HASHFUNCTIONOUTPUTLENGTH_VARIABLE];
 }
 
+// HashConfig specifies the configuration for hashing operations used in
+// verifying the hashmachine program.
 message HashConfig {
     HashFunction hash_function = 1;
 
@@ -36,6 +45,8 @@ message HashConfig {
     uint32 hash_output_length_bytes = 2;
 }
 
+// ProgramMetadata provides metadata to verify and execute the hashmachine
+// program.
 message ProgramMetadata {
     HashConfig hash_config = 1;
 
@@ -54,6 +65,7 @@ message ProgramMetadata {
 
 }
 
+// OpCode identifies the operation to be performed.
 enum OpCode {
     OPCODE_UNKNOWN = 0;
 
@@ -99,6 +111,9 @@ enum OpCode {
     OPCODE_POP_N_HASH_AND_PUSH = 5;
 }
 
+// Op represents a single operation in the hashmachine program. An Op can be
+// evaluated using its opcode and parameters as well as the current stack of
+// the hashmachine.
 message Op {
     OpCode opcode = 1;
 

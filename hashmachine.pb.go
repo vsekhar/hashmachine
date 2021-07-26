@@ -26,6 +26,11 @@ const (
 // of the legacy proto package is being used.
 const _ = proto.ProtoPackageIsVersion4
 
+// HashFunctionOutputLength describes whether a HashFunction has fixed or
+// variable length output.
+//
+// Programs using a HashFunction with variable length output must also set
+// hash_output_length_bytes in their HashConfig.
 type HashFunctionOutputLength int32
 
 const (
@@ -75,6 +80,8 @@ func (HashFunctionOutputLength) EnumDescriptor() ([]byte, []int) {
 	return file_hashmachine_proto_rawDescGZIP(), []int{0}
 }
 
+// HashFunction specifies the hash function to use when evaluating the
+// hashmachine program.
 type HashFunction int32
 
 const (
@@ -124,6 +131,7 @@ func (HashFunction) EnumDescriptor() ([]byte, []int) {
 	return file_hashmachine_proto_rawDescGZIP(), []int{1}
 }
 
+// OpCode identifies the operation to be performed.
 type OpCode int32
 
 const (
@@ -213,6 +221,8 @@ func (OpCode) EnumDescriptor() ([]byte, []int) {
 	return file_hashmachine_proto_rawDescGZIP(), []int{2}
 }
 
+// HashConfig specifies the configuration for hashing operations used in
+// verifying the hashmachine program.
 type HashConfig struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -276,6 +286,8 @@ func (x *HashConfig) GetHashOutputLengthBytes() uint32 {
 	return 0
 }
 
+// ProgramMetadata provides metadata to verify and execute the hashmachine
+// program.
 type ProgramMetadata struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -348,6 +360,9 @@ func (x *ProgramMetadata) GetBranchingFactor() uint32 {
 	return 0
 }
 
+// Op represents a single operation in the hashmachine program. An Op can be
+// evaluated using its opcode and parameters as well as the current stack of
+// the hashmachine.
 type Op struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

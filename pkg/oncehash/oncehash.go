@@ -69,7 +69,7 @@ func WrapShake(s sha3.ShakeHash, outputLength int) Hash {
 	return &shakeOnceWrapper{h: s, outputLength: outputLength}
 }
 
-// hashOnceWrapper makes a hash.Hash into a onceHash
+// hashOnceWrapper makes a hash.Hash into a oncehash.Hash.
 type hashOnceWrapper struct {
 	onceHashImpl
 	h hash.Hash
@@ -87,7 +87,7 @@ func (h *hashOnceWrapper) Reset()         { h.summed = false; h.h.Reset() }
 func (h *hashOnceWrapper) Size() int      { return h.h.Size() }
 func (h *hashOnceWrapper) BlockSize() int { return h.h.BlockSize() }
 
-// WrapHash wraps a hash.Hash and returns a OnceHash.
+// WrapHash wraps a hash.Hash and returns a oncehash.Hash.
 func WrapHash(h hash.Hash) Hash {
 	return &hashOnceWrapper{h: h}
 }

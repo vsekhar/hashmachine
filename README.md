@@ -1,6 +1,8 @@
 # hashmachine
 Hashmachine is a simple and general protocol for hashing byte strings, useful when evaluating hash proofs from a number of sources (e.g. Merkle Trees).
 
+Hashmachine programs are intended to support use cases where data is timestamped in a verifiable log and an inclusion proof (in hashmachine format) is later stored with the data. Protocol Buffers are used to ensure hashmachine program formats can evolve while maintaining compatibility (see below).
+
 ## Running hashmachine programs
 
 Hashmachine encodes proofs as instructions to a stack machine
@@ -105,6 +107,12 @@ POP_N_HASH_AND_PUSH    // hashes g, then n, pushes o
 ```
 
 Proving multiple values reuses literals and intermediates, reducing the size of the proof. The proof for `b` alone had 3 literals and 7 operations, the proof for `j` alone had 2 literals and 5 operations, totalling 5 literals and 12 operations. The combined proof, however, only had 3 literals and 9 operations. Combined proof length grows approximately `O(logn)` in the number of values being proven (i.e. the number of inputs).
+
+## Compatibility
+
+**Hashmachine is currently pre-alpha. The hashmachine format and semantics are not stable**
+
+When hashmachine reaches 1.0, the format will be considered stable. This means programs encoded in hashmachine are guaranteed to verify or fail to verify consistently over time.
 
 ## Caveats
 

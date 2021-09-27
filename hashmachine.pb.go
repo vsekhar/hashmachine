@@ -229,14 +229,14 @@ type HashConfig struct {
 	unknownFields protoimpl.UnknownFields
 
 	HashFunction HashFunction `protobuf:"varint,1,opt,name=hash_function,json=hashFunction,proto3,enum=hashmachine.HashFunction" json:"hash_function,omitempty"`
-	// hash_output_length_bytes is the number of bytes to read from a variable
+	// hash_output_length_bytes is the number of bytes to read from a variable-
 	// length hash function.
 	//
-	// For hash functions with variable length outputs, this field must be set
-	// otherwise the program is invalid.
+	// For hash functions with variable-length outputs, this field must be set
+	// and must be greater than zero, otherwise the program is invalid.
 	//
-	// For hashes with fixed length outputs, this must not be set or set to zero
-	// otherwise the program is invalid.
+	// For hashes with fixed-length outputs, this must not be set or set to
+	// zero, otherwise the program is invalid.
 	HashOutputLengthBytes uint32 `protobuf:"varint,2,opt,name=hash_output_length_bytes,json=hashOutputLengthBytes,proto3" json:"hash_output_length_bytes,omitempty"`
 }
 

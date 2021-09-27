@@ -34,14 +34,14 @@ enum HashFunction {
 message HashConfig {
     HashFunction hash_function = 1;
 
-    // hash_output_length_bytes is the number of bytes to read from a variable
+    // hash_output_length_bytes is the number of bytes to read from a variable-
     // length hash function.
     //
-    // For hash functions with variable length outputs, this field must be set
-    // otherwise the program is invalid.
+    // For hash functions with variable-length outputs, this field must be set
+    // and must be greater than zero, otherwise the program is invalid.
     //
-    // For hashes with fixed length outputs, this must not be set or set to zero
-    // otherwise the program is invalid.
+    // For hashes with fixed-length outputs, this must not be set or set to
+    // zero, otherwise the program is invalid.
     uint32 hash_output_length_bytes = 2;
 }
 

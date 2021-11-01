@@ -43,8 +43,8 @@ var hashInput2 *hashmachine.Program = &hashmachine.Program{
 		BranchingFactor:    0,
 	},
 	Ops: []*hashmachine.Op{
-		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 1},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0},
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 1},
 		{Opcode: hashmachine.OpCode_OPCODE_POP_N_PUSH_HASH, Index: 2},
 	},
 }
@@ -58,9 +58,9 @@ var hashInput3 *hashmachine.Program = &hashmachine.Program{
 		BranchingFactor:    0,
 	},
 	Ops: []*hashmachine.Op{
-		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 2},
-		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 1},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0},
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 1},
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 2},
 		{Opcode: hashmachine.OpCode_OPCODE_POP_N_PUSH_HASH, Index: 3},
 	},
 }
@@ -68,14 +68,17 @@ var hashInput3 *hashmachine.Program = &hashmachine.Program{
 // The tests below use the following MMR, where leafs are just the
 // corresponding letter and non-leafs are the hashes of their children.
 //
+// Two states are used: MMR1 (lowercase letters) and MMR2 (lowercase and
+// bracketed uppercase letters).
+//
 //         ---- o ----
 //       /             \
-//       g              n
-//      /  \           /  \
-//    /     \         /    \
-//    c      f       j     m      r
-//   / \    / \     / \   / \    /  \
-//   a  b  d   e   h   i k   l   p  q   s
+//       g              n           [V]
+//      /  \           /  \         /  \
+//     /    \         /    \       /    \
+//    c      f       j     m      r     [U]
+//   / \    / \     / \   / \    /  \   /  \
+//   a  b  d   e   h   i k   l   p  q   s [T]
 
 var (
 	// Leaves
@@ -90,23 +93,27 @@ var (
 	p = []byte("p")
 	q = []byte("q")
 	s = []byte("s")
+	T = []byte("T")
 
 	// Second level
-	c = DecodeBase64OrDie("+44g/C5MPySMYMOb1lLzwTRymLuXe4tNWQO4UFViBgM")
-	f = DecodeBase64OrDie("lZpF1E5vz1g2HtAEaBVW/lASnyEJ6BfewJjADJ5dJXg")
-	j = DecodeBase64OrDie("j0NDRmSPa5bfid2pAcUXaxCm2Dlh3TwayItZstwyeqQ")
-	m = DecodeBase64OrDie("0/P6aJJJfbEKJBf86bVTRkzF0HcYQZ3otn5z5GDH2qs")
-	r = DecodeBase64OrDie("zk6aDa0e7Y1pxxNpKnSea2xIb3kVbso8Lprm2yK2M+Y")
+	c = DecodeBase64OrDie("lw9RnCytvO+x6BaU+QS8YindKoMA6YxtDU/Ev8pYQUA")
+	f = DecodeBase64OrDie("nBYj8NOOKOlZTy7zGn7JCSkcT9sFp3fczS6Tan9AYBE")
+	j = DecodeBase64OrDie("jGsK26VM3Fnc7eHnMn+966POJNXnTrhN+3IpflEuLas")
+	m = DecodeBase64OrDie("xhHWo3lC8pk1RZUbKO7xJjT9l0CKll4uXe2/xOgVmcQ")
+	r = DecodeBase64OrDie("y5aJe9D4L9VMJMk1huN0Fcg9XiXjiWQbl2017n1MxF4")
+	U = DecodeBase64OrDie("2hM+C6myy73mjVnlR4gAUhi+EfoyfYdyrYPUGeb01Uo")
 
 	// Third level
-	g = DecodeBase64OrDie("qxaCpoXDD7YI8t2wA3thFGIWbjcPepuEO9nyR4X0P4Q")
-	n = DecodeBase64OrDie("p9W1vm0JXk8Iaok7NQkUvpaFqdqQD/OXcvrgk8AoVsE")
+	g = DecodeBase64OrDie("aQicrrqFwNuwfMqNA+H8FyYqjIV6aWVku62qbNoCjv4")
+	n = DecodeBase64OrDie("UvFKrAykGrv3JA/VEwYcDyzF7Y+NxYOAzy9YRCpKo/0")
+	V = DecodeBase64OrDie("iLUkdfvPfSRNpBTFnzKq6w9Qd3Mm9V8gkEeGlDKTmMc")
 
 	// Fourth level
-	o = DecodeBase64OrDie("sMldWGNJuvhtsvs+SJ5bclJqVz1w8Ygv6aLLdZDEf/I")
+	o = DecodeBase64OrDie("kZq0tPyMjPHXAlr4iHVgj5YiUn3Z/m0uCYG4gHZuVZQ")
 
-	// MMR digest
-	mmr = DecodeBase64OrDie("Oqoh2Jpmt0h6sLKErIRmjCYRpI3sZy3FIHfzCHl0qn4")
+	// MMR digests
+	mmr1 = DecodeBase64OrDie("2MsldyyCLIWXHmoukhmBX9HT2mhB2WHzsbKOkunQS2k")
+	mmr2 = DecodeBase64OrDie("yYYDbDjASjhExbut2BONfnra5Q3B5iZb5dre5uWXC6U")
 )
 
 var hashN *hashmachine.Program = &hashmachine.Program{
@@ -134,13 +141,13 @@ var bInO *hashmachine.Program = &hashmachine.Program{
 		BranchingFactor:    2,
 	},
 	Ops: []*hashmachine.Op{
-		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: n},
-		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: f},
-		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0}, // b
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: a},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0},   // b
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH}, // c
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: f},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH}, // g
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: n},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH}, // o
 	},
 }
 
@@ -153,11 +160,11 @@ var jInO *hashmachine.Program = &hashmachine.Program{
 		BranchingFactor:    2,
 	},
 	Ops: []*hashmachine.Op{
-		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: m},
-		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0}, // j
-		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: g},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0}, // j
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: m},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH}, // n
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH}, // o
 	},
 }
 
@@ -170,19 +177,19 @@ var bAndJInO *hashmachine.Program = &hashmachine.Program{
 		BranchingFactor:    2,
 	},
 	Ops: []*hashmachine.Op{
-		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: m},
-		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 1}, // j
-		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},
-		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: f},
-		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0}, // b
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: a},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0},   // b
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH}, // c
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: f},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH}, // g
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 1},   // j
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: m},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH}, // n
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH}, // o
 	},
 }
 
-var MMRDigest *hashmachine.Program = &hashmachine.Program{
+var mmr1Digest *hashmachine.Program = &hashmachine.Program{
 	Metadata: &hashmachine.ProgramMetadata{
 		HashConfig: &hashmachine.HashConfig{
 			HashFunction: hashmachine.HashFunction_HASHFUNCTION_SHA_256,
@@ -191,12 +198,53 @@ var MMRDigest *hashmachine.Program = &hashmachine.Program{
 		BranchingFactor:    2,
 	},
 	Ops: []*hashmachine.Op{
-		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: s},
-		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: r},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: o},
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: r},
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: s},
 		{Opcode: hashmachine.OpCode_OPCODE_POP_N_PUSH_HASH, Index: 3},
 	},
 }
+
+var mmr2Digest *hashmachine.Program = &hashmachine.Program{
+	Metadata: &hashmachine.ProgramMetadata{
+		HashConfig: &hashmachine.HashConfig{
+			HashFunction: hashmachine.HashFunction_HASHFUNCTION_SHA_256,
+		},
+		ExpectedInputCount: 0,
+		BranchingFactor:    2,
+	},
+	Ops: []*hashmachine.Op{
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: o},
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: V},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_N_PUSH_HASH, Index: 2},
+	},
+}
+
+var consistency *hashmachine.Program = &hashmachine.Program{
+	Metadata: &hashmachine.ProgramMetadata{
+		HashConfig: &hashmachine.HashConfig{
+			HashFunction: hashmachine.HashFunction_HASHFUNCTION_SHA_256,
+		},
+		ExpectedInputCount: 1,
+		BranchingFactor:    2,
+	},
+	Ops: []*hashmachine.Op{
+		// Reconstruct the digest(mmr1) (input[0])
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: o},
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: r},
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: s},
+		{Opcode: hashmachine.OpCode_OPCODE_PEAK_N_PUSH_HASH, Index: 3}, // mmr1
+		{Opcode: hashmachine.OpCode_OPCODE_MATCH_INPUT, Index: 0},
+
+		// Construct digest(mmr2)
+		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: T},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},    // U
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},    // V
+		{Opcode: hashmachine.OpCode_OPCODE_POP_N_PUSH_HASH, Index: 2}, // mmr2
+	},
+}
+
+// TODO: consistency proof of mmr1 to mmr2
 
 type testCase struct {
 	p      *hashmachine.Program
@@ -206,8 +254,7 @@ type testCase struct {
 
 var testCases []testCase = []testCase{
 	{hashInput, [][]byte{b}, DecodeBase64OrDie("PiPoFgA5WUoziU9lZOGxNIu9egCI1CxKy3PurtWcAJ0")},
-	{hashN, [][]byte{}, DecodeBase64OrDie("N7OgVZ+dP0VRO9k8O/XxoBMIfbbz4tSxQs8ujGABv40")},
-	{hashInput3, [][]byte{o, r, s}, mmr},
+	{hashN, [][]byte{}, DecodeBase64OrDie("KCv+8LPxgJomsdbjPurWgEjfk1D76sQqR0c4z53/K/g")},
 
 	// Second level
 	{hashInput2, [][]byte{a, b}, c},
@@ -215,10 +262,12 @@ var testCases []testCase = []testCase{
 	{hashInput2, [][]byte{h, i}, j},
 	{hashInput2, [][]byte{k, l}, m},
 	{hashInput2, [][]byte{p, q}, r},
+	{hashInput2, [][]byte{s, T}, U},
 
 	// Third level
 	{hashInput2, [][]byte{c, f}, g},
 	{hashInput2, [][]byte{j, m}, n},
+	{hashInput2, [][]byte{r, U}, V},
 
 	// Fourth level
 	{hashInput2, [][]byte{g, n}, o},
@@ -228,8 +277,14 @@ var testCases []testCase = []testCase{
 	{jInO, [][]byte{j}, o},
 	{bAndJInO, [][]byte{b, j}, o},
 
-	// Digest
-	{MMRDigest, [][]byte{}, mmr},
+	// Digests
+	{hashInput2, [][]byte{o, V}, mmr2},
+	{hashInput3, [][]byte{o, r, s}, mmr1},
+	{mmr1Digest, [][]byte{}, mmr1},
+	{mmr2Digest, [][]byte{}, mmr2},
+
+	// Consistency
+	{consistency, [][]byte{mmr1}, mmr2},
 }
 
 func TestProofs(t *testing.T) {

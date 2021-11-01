@@ -68,6 +68,11 @@ func (hm *HashMachine) pop() []byte {
 	return r
 }
 
+// Returns the value on the stack at index i (0 == top of stack).
+func (hm *HashMachine) peak(i int) []byte {
+	return hm.stack[len(hm.stack)-1-i]
+}
+
 func (hm *HashMachine) Output() ([]byte, error) {
 	if len(hm.stack) != 1 {
 		return nil, fmt.Errorf("invalid program: expected one output on stack, stack size: %d", len(hm.stack))
@@ -108,31 +113,37 @@ func (hm *HashMachine) Step() error {
 		}
 		hm.push(hm.h.Sum(nil))
 	case hashmachine.OpCode_OPCODE_POP_N_PUSH_HASH:
-		if len(hm.stack) == 0 {
-			return errors.New("invalid program: stack empty (OPCODE_POP_N_PUSH_HASH)")
+		if len(hm.stack) < int(op.Index) {
+			return fmt.Errorf("invalid program: stack underflow, expected at least %d values, found %d", int(op.Index), len(hm.stack))
 		}
 		hm.h.Reset()
 		for i := 0; i < int(op.Index); i++ {
 			hm.h.Write(hm.pop())
 		}
 		hm.push(hm.h.Sum(nil))
-		/*
-			case hashmachine.OpCode_OPCODE_POP_AND_WRITE:
-				b := hm.pop()
-				if hm.curHash == nil {
-					hm.curHash = hm.hashMaker()
-				}
-				hm.curHash.Write(b)
-			case hashmachine.OpCode_OPCODE_READ_PUSH_AND_CLOSE:
-				if hm.curHash == nil {
-					return errors.New("invalid program: no active hasher")
-				}
-				b := hm.curHash.Sum(nil)
-				hm.push(b)
-				hm.curHash = nil
-		*/
+	case hashmachine.OpCode_OPCODE_PEAK_N_PUSH_HASH:
+		if len(hm.stack) < int(op.Index) {
+			return fmt.Errorf("invalid program: stack underflow, expected at least %d values, found %d", int(op.Index), len(hm.stack))
+		}
+		hm.h.Reset()
+		for i := 0; i < int(op.Index); i++ {
+			hm.h.Write(hm.peak(i))
+		}
+		hm.push(hm.h.Sum(nil))
+	case hashmachine.OpCode_OPCODE_MATCH_INPUT:
+		if op.Index >= uint64(hm.program.Metadata.ExpectedInputCount) {
+			return fmt.Errorf("invalid program: input index out of bounds %d, program's expected input count %d", op.Index, hm.program.Metadata.ExpectedInputCount)
+		}
+		if int(op.Index) >= len(hm.inputs) {
+			// Shouldn't happen, we check inputs in New.
+			return fmt.Errorf("invalid invocation: program expected input at index %d, invoked with %d total inputs", op.Index, len(hm.inputs))
+		}
+		v := hm.pop()
+		if !bytes.Equal(v, hm.inputs[op.Index]) {
+			return fmt.Errorf("invalid program: value (%x) does not match input %d (%x)", v, op.Index, hm.inputs[op.Index])
+		}
 	default:
-		return fmt.Errorf("invalid program: unkonwn opcode %d", op.Opcode)
+		return fmt.Errorf("invalid program: unknown opcode %d", op.Opcode)
 	}
 	return nil
 }

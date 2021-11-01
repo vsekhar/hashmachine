@@ -109,6 +109,20 @@ enum OpCode {
     // is useful when hashing variable numbers of inputs such as when creating
     // a digest of peaks of a growing Merkle Mountain Range.
     OPCODE_POP_N_PUSH_HASH = 5;
+
+    // OPCODE_PEAK_N_PUSH_HASH peaks 'index' values from the stack, hashing
+    // each in pop order, gets the hash sum and pushes it onto the stack.
+    //
+    // OPCODE_PEAK_N_PUSH_HASH ignores metadata.branchingfactor. This opcode
+    // is useful when hashing variable numbers of inputs such as when recreating
+    // an interim digest of peaks while consistency checking a Merkle Mountain
+    // Range.
+    OPCODE_PEAK_N_PUSH_HASH = 6;
+
+    // OPCODE_MATCH_INPUT pops the top value of the stack and compares it with
+    // the input indentified by 'index'. If the values match, the program
+    // proceeds. If the values do not match, the program fails verification.
+    OPCODE_MATCH_INPUT = 7;
 }
 
 // Op represents a single operation in the hashmachine program. An Op can be

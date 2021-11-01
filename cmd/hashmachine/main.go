@@ -25,7 +25,7 @@ func main() {
 			{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 2},
 			{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 1},
 			{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0},
-			{Opcode: hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH, Index: 3},
+			{Opcode: hashmachine.OpCode_OPCODE_POP_N_PUSH_HASH, Index: 3},
 		},
 	}
 

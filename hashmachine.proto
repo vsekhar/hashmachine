@@ -57,9 +57,9 @@ message ProgramMetadata {
     uint32 expected_input_count = 3;
 
     // branching_factor is the branching factor of the tree of hashes used to
-    // create the program. If the program uses OPCODE_POP_CHILDREN_HASH_AND_PUSH
+    // create the program. If the program uses OPCODE_POP_CHILDREN_PUSH_HASH
     // then branching_factor must be set and non-zero, otherwise the program is
-    // invalid. If the program does not use OPCODE_POP_CHILDREN_HASH_AND_PUSH,
+    // invalid. If the program does not use OPCODE_POP_CHILDREN_PUSH_HASH,
     // then branching_factor is ignored.
     uint32 branching_factor = 4;
 
@@ -90,25 +90,25 @@ enum OpCode {
     // The program is invalid if there is no 'payload'.
     OPCODE_PUSH_BYTES = 3;
 
-    // OPCODE_POP_CHILDREN_HASH_AND_PUSH pops metadata.branchingfactor values
+    // OPCODE_POP_CHILDREN_PUSH_HASH pops metadata.branchingfactor values
     // from the stack, hashing each in pop order, gets the hash sum and pushes
-    // it onto the stack. This is equivalent to OPCODE_POP_N_HASH_AND_PUSH where
+    // it onto the stack. This is equivalent to OPCODE_POP_N_PUSH_HASH where
     // N == medatadata.branchingfactor.
     //
-    // OPCODE_POP_CHILDREN_HASH_AND_PUSH saves from repeatedly encoding a count
+    // OPCODE_POP_CHILDREN_PUSH_HASH saves from repeatedly encoding a count
     // of values to pop for the common case where we are popping a fixed number
     // of children to produce a parent in a tree of hashes.
     //
     // The program is invalid if the stack underflows.
-    OPCODE_POP_CHILDREN_HASH_AND_PUSH = 4;
+    OPCODE_POP_CHILDREN_PUSH_HASH = 4;
 
-    // OPCODE_POP_N_HASH_AND_PUSH pops 'index' values from the stack, hashing
+    // OPCODE_POP_N_PUSH_HASH pops 'index' values from the stack, hashing
     // each in pop order, gets the hash sum and pushes it onto the stack.
     //
-    // OPCODE_POP_N_HASH_AND_PUSH ignores metadata.branchingfactor. This opcode
+    // OPCODE_POP_N_PUSH_HASH ignores metadata.branchingfactor. This opcode
     // is useful when hashing variable numbers of inputs such as when creating
     // a digest of peaks of a growing Merkle Mountain Range.
-    OPCODE_POP_N_HASH_AND_PUSH = 5;
+    OPCODE_POP_N_PUSH_HASH = 5;
 }
 
 // Op represents a single operation in the hashmachine program. An Op can be

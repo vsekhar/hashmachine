@@ -18,9 +18,9 @@ Programs consist of the following opcodes:
 
 * `PUSH_INPUT(index uint32)`: pushes `input[index]` onto the stack and mark that input as "used"; fail if no such input exists
 * `PUSH_BYTES(payload []byte)`: push a byte string literal onto the stack; fail if no byte string is provided in the program
-* `POP_N_HASH_AND_PUSH(index uint32)`: pop `index` values from the stack, hashing each value in pop order, and pushing the hash result onto the stack; fail if the stack has insufficient values
+* `POP_N_PUSH_HASH(index uint32)`: pop `index` values from the stack, hashing each value in pop order, and pushing the hash result onto the stack; fail if the stack has insufficient values
   * This op code is useful for multi-valued top-level digests, like that of the MMR
-* `POP_CHILDREN_HASH_AND_PUSH`: equivalent to `POP_N_HASH_AND_PUSH` where `N == metadata.branching_factor`.
+* `POP_CHILDREN_PUSH_HASH`: equivalent to `POP_N_PUSH_HASH` where `N == metadata.branching_factor`.
   * This op code is useful for hashing a set of interior nodes to produce their parent
   * Having a separate op code saves us from repetitively storing the branching factor for this common case
 
@@ -44,7 +44,7 @@ Metadata{
     branching_factor = 1
 }
 PUSH_INPUT(0)
-POP_N_HASH_AND_PUSH
+POP_N_PUSH_HASH
 ```
 
 ### Inclusion proofs
@@ -71,11 +71,11 @@ Metadata{
 }
 PUSH_BYTES(a)
 PUSH_INPUT(0)                 // == b (as input)
-POP_CHILDREN_HASH_AND_PUSH    // hashes b, then a, pushes c
+POP_CHILDREN_PUSH_HASH    // hashes b, then a, pushes c
 PUSH_BYTES(f)
-POP_CHILDREN_HASH_AND_PUSH    // hashes f, then c, pushes g
+POP_CHILDREN_PUSH_HASH    // hashes f, then c, pushes g
 PUSH_BYTES(n)
-POP_CHILDREN_HASH_AND_PUSH    // hashes n, then g, pushes o
+POP_CHILDREN_PUSH_HASH    // hashes n, then g, pushes o
 ```
 
 The client can then verify that the output of the above program matches `o`.
@@ -90,8 +90,8 @@ Metadata{
 PUSH_BYTES(g)
 PUSH_INPUT(0)                 // == j (as input)
 PUSH_BYTES(m)
-POP_CHILDREN_HASH_AND_PUSH    // hashes m, then j, pushes n
-POP_CHILDREN_HASH_AND_PUSH    // hashes n, then g, pushes o
+POP_CHILDREN_PUSH_HASH    // hashes m, then j, pushes n
+POP_CHILDREN_PUSH_HASH    // hashes n, then g, pushes o
 ```
 
 Multiple input values can be proven in a single program. The proof for `[b, j]` in `o` is:
@@ -103,13 +103,13 @@ Metadata{
 }
 PUSH_BYTES(a)
 PUSH_INPUT(0)                 // == b (as input)
-POP_CHILDREN_HASH_AND_PUSH    // hashes b, then a, pushes c
+POP_CHILDREN_PUSH_HASH    // hashes b, then a, pushes c
 PUSH_BYTES(f)
-POP_CHILDREN_HASH_AND_PUSH    // hashes f, then c, pushes g
+POP_CHILDREN_PUSH_HASH    // hashes f, then c, pushes g
 PUSH_INPUT(1)                 // == j (as input)
 PUSH_BYTES(m)
-POP_CHILDREN_HASH_AND_PUSH    // hashes m, then j, pushes n
-POP_CHILDREN_HASH_AND_PUSH    // hashes n, then g, pushes o
+POP_CHILDREN_PUSH_HASH    // hashes m, then j, pushes n
+POP_CHILDREN_PUSH_HASH    // hashes n, then g, pushes o
 ```
 
 Proving multiple values reuses literals and intermediates, reducing the size of the proof. The proof for `b` alone had 3 literals and 7 operations, the proof for `j` alone had 2 literals and 5 operations, totalling 5 literals and 12 operations. The combined proof, however, only had 3 literals and 9 operations. For a given tree, combined proof lengths grow approximately `O(logn)` in the number of values being proven (i.e. the number of inputs).
@@ -158,16 +158,16 @@ Metadata{
 PUSH_BYTES(o)
 PUSH_BYTES(r)
 PUSH_BYTES(s)
-PEAK_N_PUSH_DIGEST(3)         // hashes s, r, o (left on stack), pushes digest_1
+PEAK_N_PUSH_HASH(3)         // hashes s, r, o (left on stack), pushes digest_1
 MATCH_INPUT(0)                // pop digest_1, match it with input 0
 
 PUSH_BYTES(t)
-POP_CHILDREN_HASH_AND_PUSH    // hashes t, then s, pushes u
-POP_CHILDREN_HASH_AND_PUSH    // hashes u, then r, pushes v
-POP_N_PUSH_DIGEST(2)          // hashes v, then o, pushes digest_2
+POP_CHILDREN_PUSH_HASH    // hashes t, then s, pushes u
+POP_CHILDREN_PUSH_HASH    // hashes u, then r, pushes v
+POP_N_PUSH_HASH(2)          // hashes v, then o, pushes digest_2
 ```
 
-> TODO: add PEAK/POP_N_PUSH_DIGEST as opcodes.
+> TODO: add PEAK/POP_N_PUSH_HASH as opcodes.
 
 The top of the stack can then be compared with `digest_2` to complete the proof.
 

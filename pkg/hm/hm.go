@@ -95,7 +95,7 @@ func (hm *HashMachine) Step() error {
 		hm.push(hm.inputs[op.Index])
 	case hashmachine.OpCode_OPCODE_PUSH_BYTES:
 		hm.push(op.Payload)
-	case hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH:
+	case hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH:
 		if hm.program.Metadata.BranchingFactor < 1 {
 			return fmt.Errorf("bad branching factor in metadata: %d", hm.program.Metadata.BranchingFactor)
 		}
@@ -107,9 +107,9 @@ func (hm *HashMachine) Step() error {
 			hm.h.Write(hm.pop())
 		}
 		hm.push(hm.h.Sum(nil))
-	case hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH:
+	case hashmachine.OpCode_OPCODE_POP_N_PUSH_HASH:
 		if len(hm.stack) == 0 {
-			return errors.New("invalid program: stack empty (OPCODE_POP_N_HASH_AND_PUSH)")
+			return errors.New("invalid program: stack empty (OPCODE_POP_N_PUSH_HASH)")
 		}
 		hm.h.Reset()
 		for i := 0; i < int(op.Index); i++ {

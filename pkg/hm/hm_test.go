@@ -30,7 +30,7 @@ var hashInput *hashmachine.Program = &hashmachine.Program{
 	},
 	Ops: []*hashmachine.Op{
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH, Index: 1},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_N_PUSH_HASH, Index: 1},
 	},
 }
 
@@ -45,7 +45,7 @@ var hashInput2 *hashmachine.Program = &hashmachine.Program{
 	Ops: []*hashmachine.Op{
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 1},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH, Index: 2},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_N_PUSH_HASH, Index: 2},
 	},
 }
 
@@ -61,7 +61,7 @@ var hashInput3 *hashmachine.Program = &hashmachine.Program{
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 2},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 1},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH, Index: 3},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_N_PUSH_HASH, Index: 3},
 	},
 }
 
@@ -121,7 +121,7 @@ var hashN *hashmachine.Program = &hashmachine.Program{
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: b},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: a},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: c},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH, Index: 3},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_N_PUSH_HASH, Index: 3},
 	},
 }
 
@@ -138,9 +138,9 @@ var bInO *hashmachine.Program = &hashmachine.Program{
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: f},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0}, // b
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: a},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},
 	},
 }
 
@@ -155,9 +155,9 @@ var jInO *hashmachine.Program = &hashmachine.Program{
 	Ops: []*hashmachine.Op{
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: m},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0}, // j
-		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: g},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},
 	},
 }
 
@@ -172,13 +172,13 @@ var bAndJInO *hashmachine.Program = &hashmachine.Program{
 	Ops: []*hashmachine.Op{
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: m},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 1}, // j
-		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: f},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_INPUT, Index: 0}, // b
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: a},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_HASH_AND_PUSH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_CHILDREN_PUSH_HASH},
 	},
 }
 
@@ -194,7 +194,7 @@ var MMRDigest *hashmachine.Program = &hashmachine.Program{
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: s},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: r},
 		{Opcode: hashmachine.OpCode_OPCODE_PUSH_BYTES, Payload: o},
-		{Opcode: hashmachine.OpCode_OPCODE_POP_N_HASH_AND_PUSH, Index: 3},
+		{Opcode: hashmachine.OpCode_OPCODE_POP_N_PUSH_HASH, Index: 3},
 	},
 }
 

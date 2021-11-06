@@ -133,19 +133,19 @@ a  b  d   e   h   i k   l   p  q   s
 digest_1 = hash(s, r, o)
 ```
 
-At a later time, the MMR may have the form:
+At a later time, the MMR may have the form below, with new entries shown in bracketed uppercase letters:
 
 ```text
       ---- o ----
     /             \
-    g              n            v
+    g              n           [V]
    /  \           /  \         /  \
  /     \         /    \       /    \
- c      f       j     m      r      u
+ c      f       j     m      r     [U]
 / \    / \     / \   / \    /  \   /  \
-a  b  d   e   h   i k   l   p  q   s  t
+a  b  d   e   h   i k   l   p  q   s [T]
 
-digest_2 = hash(v, o)
+digest_2 = hash(V, o)
 ```
 
 We want to demonstrate that `digest_2` is _consistent_ with `digest_1`. To do this, we first must recreate `digest_1` using its underlying hashes and then proceed to recreate `digest_2` from those and additional hashes.
@@ -158,18 +158,20 @@ Metadata{
 PUSH_BYTES(o)
 PUSH_BYTES(r)
 PUSH_BYTES(s)
-PEAK_N_PUSH_HASH(3)         // hashes s, r, o (left on stack), pushes digest_1
-MATCH_INPUT(0)                // pop digest_1, match it with input 0
+PEAK_N_PUSH_HASH(3)       // hashes s, r, o (left on stack), pushes digest_1
+MATCH_INPUT(0)            // pop digest_1, match it with input 0
 
-PUSH_BYTES(t)
-POP_CHILDREN_PUSH_HASH    // hashes t, then s, pushes u
-POP_CHILDREN_PUSH_HASH    // hashes u, then r, pushes v
-POP_N_PUSH_HASH(2)          // hashes v, then o, pushes digest_2
+PUSH_BYTES(T)
+POP_CHILDREN_PUSH_HASH    // hashes T, then s, pushes U
+POP_CHILDREN_PUSH_HASH    // hashes U, then r, pushes V
+POP_N_PUSH_HASH(2)        // hashes V, then o, pushes digest_2
 ```
 
-> TODO: add PEAK/POP_N_PUSH_HASH as opcodes.
-
 The top of the stack can then be compared with `digest_2` to complete the proof.
+
+> TODO: Support data entries within the tree nodes. Hash children plus data? Make parent?
+
+> TODO: Generalize Execute the program with inputs as well as outputs. Each input must be pushed onto the stack exactly once and each output must be matched with a MATCH_OUTPUT(i) opcode exactly once (can drop expected_input_count).
 
 ## Compatibility
 
